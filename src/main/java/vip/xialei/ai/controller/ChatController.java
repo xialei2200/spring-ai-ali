@@ -1,12 +1,15 @@
 package vip.xialei.ai.controller;
 
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import vip.xialei.ai.entity.ChatRequest;
-import vip.xialei.ai.entity.ChatResponse;
-import vip.xialei.ai.service.ChatService;
+import reactor.core.publisher.Flux;
 
 /**
  * AI 聊天控制器
@@ -14,20 +17,22 @@ import vip.xialei.ai.service.ChatService;
 @RestController
 @RequestMapping("/model")
 public class ChatController {
-    
-    private final ChatService chatService;
 
-    public ChatController(ChatService chatService) {
-        this.chatService = chatService;
+    @Autowired
+    private ChatModel chatModel;
+
+    public ChatController(ChatModel chatModel) {
+        this.chatModel = chatModel;
     }
 
     @RequestMapping(value = "/chat", method = RequestMethod.GET)
-    public String chat(@RequestParam("question") String question) {
-        return chatService.chat(question);
+    public String chat(@RequestParam(value = "message", defaultValue = "你是什么模型？") String message) {
+        return chatModel.call(message);
     }
-    
-    @RequestMapping(value = "/advanced", method = RequestMethod.POST)
-    public ChatResponse advancedChat(@RequestParam ChatRequest request) {
-        return chatService.chat(request);
+
+    @RequestMapping(value = "/chatStream", method = RequestMethod.GET)
+    public Flux<String> chatStream(@RequestParam(value = "message", defaultValue = "你是什么模型？") String message) {
+        Flux<String> result = chatModel.stream(new UserMessage(message));
+        return result;
     }
 }
